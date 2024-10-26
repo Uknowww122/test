@@ -1,58 +1,42 @@
 -- Cargar Kavo UI Library
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 
--- Configuración del triggerbot
+-- Configuración de Triggerbot
 local triggerbotEnabled = false
-local aimPart = "Head"
-local teamMode = true
-local minDelay = 10
-local maxDelay = 30
-local lifeCheck = true
+local targetBodyPart = "HumanoidRootPart"  -- Opciones: "Head", "UpperTorso", "HumanoidRootPart", etc.
+local allPlayersTarget = false  -- Cambia a `true` para atacar a todos los jugadores
+local minDelay = 10  -- Delay mínimo entre clics en ms
+local maxDelay = 30  -- Delay máximo entre clics en ms
 
--- Crear ventana de menú
-local Window = Library.CreateLib("Triggerbot Menu", "DarkTheme")
-
--- Pestaña para Triggerbot
-local Tab = Window:NewTab("Triggerbot")
-
--- Sección para activar/desactivar
-local Section = Tab:NewSection("Activar Triggerbot")
-Section:NewToggle("Habilitar Triggerbot", "Activa o desactiva el triggerbot", function(state)
-    triggerbotEnabled = state
+-- Activa el Triggerbot con el botón derecho del mouse
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        triggerbotEnabled = true
+    end
 end)
 
--- Selección de parte del cuerpo
-Section:NewDropdown("Parte del Cuerpo", "Elige entre cabeza o torso", {"Head", "Torso"}, function(currentOption)
-    aimPart = currentOption
+-- Desactiva el Triggerbot cuando se suelta el botón derecho del mouse
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        triggerbotEnabled = false
+    end
 end)
 
--- Modo de Equipos o Todos contra Todos
-Section:NewToggle("Modo de Equipos", "Activa para solo atacar a enemigos de otros equipos", function(state)
-    teamMode = state
-end)
-
--- Configuración de Delay
-Section:NewSlider("Min Delay (ms)", "Configura el delay mínimo", 5, 50, function(value)
-    minDelay = value
-end)
-Section:NewSlider("Max Delay (ms)", "Configura el delay máximo", 10, 100, function(value)
-    maxDelay = value
-end)
-
--- Verificación de vida del objetivo
-Section:NewToggle("Verificación de Vida", "Solo dispara si el objetivo está vivo", function(state)
-    lifeCheck = state
-end)
-
--- Función que simula un clic humano con variación
+-- Función para simular clic humano con variación
 local function simulateClick()
-    local delay = math.random(minDelay, maxDelay) / 1000  -- Variación de delay
+    local delay = math.random(minDelay, maxDelay) / 1000  -- Delay entre 10ms y 30ms
     mouse1press()
     wait(delay)
     mouse1release()
 end
 
--- Función del Triggerbot
+-- Bypass básico de anticheat (variaciones de delay y detección)
+local function antiCheatBypass()
+    local randomWait = math.random(1, 5) / 10  -- Variación aleatoria de espera entre 100ms y 500ms
+    wait(randomWait)
+end
+
+-- Función del Triggerbot con verificación de vida y bypass de anticheat
 game:GetService("RunService").RenderStepped:Connect(function()
     if triggerbotEnabled then
         local mouse = game.Players.LocalPlayer:GetMouse()
@@ -62,11 +46,27 @@ game:GetService("RunService").RenderStepped:Connect(function()
             local humanoid = target.Parent:FindFirstChild("Humanoid")
             local targetPlayer = game.Players:GetPlayerFromCharacter(target.Parent)
 
-            -- Verifica el equipo, la vida y la parte del cuerpo objetivo
-            if (not teamMode or (targetPlayer and targetPlayer.Team ~= game.Players.LocalPlayer.Team)) 
-                and humanoid.Health > 0 and target.Name == aimPart then
-                simulateClick()
-                wait(math.random(minDelay, maxDelay) / 100)  -- Delay variable entre clics
+            -- Verifica si el objetivo es un jugador enemigo o todos los jugadores según configuración
+            if (allPlayersTarget or (targetPlayer and targetPlayer.Team ~= game.Players.LocalPlayer.Team)) and humanoid.Health > 0 then
+                local bodyPart = target.Parent:FindFirstChild(targetBodyPart)
+
+                -- Si se encuentra la parte del cuerpo especificada, dispara
+                if bodyPart then
+                    simulateClick()  -- Ejecuta el clic con variación
+                    antiCheatBypass()  -- Añade un delay variable para bypass de anticheat
+                    wait(math.random(minDelay, maxDelay) / 100)  -- Variación entre disparos
+                end
+            end
+        end
+    end
+end)
+
+-- Configuración adicional del menú
+print("Triggerbot activado. Opciones:")
+print("- Presiona botón derecho del mouse para activar")
+print("- Cambia `targetBodyPart` para seleccionar cabeza, torso o cualquier otra parte")
+print("- Cambia `allPlayersTarget` a `true` para atacar a todos")
+
             end
         end
     end
