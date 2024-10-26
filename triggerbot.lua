@@ -1,42 +1,44 @@
--- Cargar Kavo UI Library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+-- Cargar la Orion Library
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
--- Configuración de Triggerbot
+-- Configuración principal del menú
+OrionLib:MakeNotification({
+    Name = "Triggerbot Loader",
+    Content = "Bienvenido al triggerbot. Usa el menú para configuraciones.",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
+
+-- Ventana principal del menú
+local Window = OrionLib:MakeWindow({
+    Name = "Triggerbot Menu",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "TriggerbotConfig"
+})
+
+-- Variables de Configuración del Triggerbot
 local triggerbotEnabled = false
-local targetBodyPart = "HumanoidRootPart"  -- Opciones: "Head", "UpperTorso", "HumanoidRootPart", etc.
-local allPlayersTarget = false  -- Cambia a `true` para atacar a todos los jugadores
-local minDelay = 10  -- Delay mínimo entre clics en ms
-local maxDelay = 30  -- Delay máximo entre clics en ms
+local targetBodyPart = "HumanoidRootPart"
+local allPlayersTarget = false
+local minDelay = 10
+local maxDelay = 30
 
--- Activa el Triggerbot con el botón derecho del mouse
-game:GetService("UserInputService").InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        triggerbotEnabled = true
-    end
-end)
-
--- Desactiva el Triggerbot cuando se suelta el botón derecho del mouse
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        triggerbotEnabled = false
-    end
-end)
-
--- Función para simular clic humano con variación
+-- Función para simular clics con delay variable
 local function simulateClick()
-    local delay = math.random(minDelay, maxDelay) / 1000  -- Delay entre 10ms y 30ms
+    local delay = math.random(minDelay, maxDelay) / 1000
     mouse1press()
     wait(delay)
     mouse1release()
 end
 
--- Bypass básico de anticheat (variaciones de delay y detección)
+-- Bypass básico de anticheat
 local function antiCheatBypass()
-    local randomWait = math.random(1, 5) / 10  -- Variación aleatoria de espera entre 100ms y 500ms
+    local randomWait = math.random(1, 5) / 10
     wait(randomWait)
 end
 
--- Función del Triggerbot con verificación de vida y bypass de anticheat
+-- Función del Triggerbot con bypass
 game:GetService("RunService").RenderStepped:Connect(function()
     if triggerbotEnabled then
         local mouse = game.Players.LocalPlayer:GetMouse()
@@ -46,28 +48,75 @@ game:GetService("RunService").RenderStepped:Connect(function()
             local humanoid = target.Parent:FindFirstChild("Humanoid")
             local targetPlayer = game.Players:GetPlayerFromCharacter(target.Parent)
 
-            -- Verifica si el objetivo es un jugador enemigo o todos los jugadores según configuración
             if (allPlayersTarget or (targetPlayer and targetPlayer.Team ~= game.Players.LocalPlayer.Team)) and humanoid.Health > 0 then
                 local bodyPart = target.Parent:FindFirstChild(targetBodyPart)
-
-                -- Si se encuentra la parte del cuerpo especificada, dispara
                 if bodyPart then
-                    simulateClick()  -- Ejecuta el clic con variación
-                    antiCheatBypass()  -- Añade un delay variable para bypass de anticheat
-                    wait(math.random(minDelay, maxDelay) / 100)  -- Variación entre disparos
+                    simulateClick()
+                    antiCheatBypass()
+                    wait(math.random(minDelay, maxDelay) / 100)
                 end
             end
         end
     end
 end)
 
--- Configuración adicional del menú
-print("Triggerbot activado. Opciones:")
-print("- Presiona botón derecho del mouse para activar")
-print("- Cambia `targetBodyPart` para seleccionar cabeza, torso o cualquier otra parte")
-print("- Cambia `allPlayersTarget` a `true` para atacar a todos")
+-- Sección del Menú para Configuración del Triggerbot
+local TriggerTab = Window:MakeTab({
+    Name = "Triggerbot",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
 
-            end
-        end
-    end
-end)
+TriggerTab:AddToggle({
+    Name = "Activar Triggerbot",
+    Default = false,
+    Callback = function(Value)
+        triggerbotEnabled = Value
+    end    
+})
+
+TriggerTab:AddDropdown({
+    Name = "Seleccionar Parte del Cuerpo",
+    Default = "HumanoidRootPart",
+    Options = {"Head", "UpperTorso", "HumanoidRootPart", "LeftLeg", "RightLeg"},
+    Callback = function(Value)
+        targetBodyPart = Value
+    end    
+})
+
+TriggerTab:AddToggle({
+    Name = "Atacar a Todos los Jugadores",
+    Default = false,
+    Callback = function(Value)
+        allPlayersTarget = Value
+    end    
+})
+
+TriggerTab:AddSlider({
+    Name = "Delay Mínimo (ms)",
+    Min = 5,
+    Max = 50,
+    Default = 10,
+    Color = Color3.fromRGB(255, 0, 0),
+    Increment = 1,
+    ValueName = "ms",
+    Callback = function(Value)
+        minDelay = Value
+    end    
+})
+
+TriggerTab:AddSlider({
+    Name = "Delay Máximo (ms)",
+    Min = 10,
+    Max = 100,
+    Default = 30,
+    Color = Color3.fromRGB(0, 255, 0),
+    Increment = 1,
+    ValueName = "ms",
+    Callback = function(Value)
+        maxDelay = Value
+    end    
+})
+
+-- Notificación de que el menú está listo
+OrionLib:Init()
